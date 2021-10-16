@@ -30,21 +30,15 @@ class IMDBScraper():
         for item in items:
             self.output.append(_extract_movie_details(item))
 
-        return self.output
-
     def upload_to_s3(self, data, bucket_name, key):
-        try:
-            s3 = boto3.client('s3')
-            s3.upload_file(data, bucket_name, key)
-            logging.error('Successfully uploaded data file')
-        except Exception:
-            logging.error('Failed to upload data to S3')
-            raise
+        s3 = boto3.client('s3')
+        s3.upload_file(data, bucket_name, key)
 
 
 def handler(event, args):
     scraper = IMDBScraper()
-    data = {'movies': scraper.scrape()}
+    scraper.scrape()
+    data = {'movies': scraper.output}
     today = datetime.date.today().strftime('%Y-%m-%d')
 
     scraper.upload_to_s3(data, event.get('bucket_name'), key=today)
