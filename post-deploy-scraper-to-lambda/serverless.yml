@@ -1,0 +1,48 @@
+service: imdb-scraper
+custom:
+  bucketName: "arn:aws:s3:::imdb-data/*"
+
+provider:
+  name: aws
+  stage: dev
+  runtime: python3.8
+  tracing:
+    lambda: true
+  timeout: 30
+  iam:
+    role:
+      name: ${sls:stage}-${self:service}
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - 's3:GetObject'
+            - 's3:PutObject'
+          Resource: 'arn:aws:s3:::imdb-data/*'
+        - Effect: 'Allow'
+          Action:
+            - 'cloudwatch:PutMetricData'
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+          Resource: '*'
+
+  functions:
+  imbd_scraper:
+    handler: imbd_scraper.handler
+    name: ${sls:stage}-${self:service}-function
+    description: Scrape movies from IMDB website
+    memorySize: 128
+
+    events:
+      - eventBridge:
+          schedule: cron(0 6 * * ? *)  # cron: min,hour,dayofmonth,month,dayofweek,year
+          input:
+            environment: ${sls:stage}
+            bucket_name: ${self:custom.bucketName}
+          tags:
+            environment: ${sls:stage}
+            name: ${self:service}-schedule
+
+    tags:
+      environment: ${sls:stage}
+      name: ${self:service}-function
