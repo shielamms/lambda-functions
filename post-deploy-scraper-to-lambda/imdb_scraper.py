@@ -7,7 +7,7 @@ import datetime
 class IMDBScraper():
     _start_url = ""
     _soup = None
-    output = []
+    _output = []
 
     def _extract_movie_details(self, item):
         title = item.select_one('.title')
@@ -30,6 +30,8 @@ class IMDBScraper():
         for item in items:
             self.output.append(_extract_movie_details(item))
 
+        return self._output
+
     def upload_to_s3(self, data, bucket_name, key):
         s3 = boto3.client('s3')
         s3.upload_file(data, bucket_name, key)
@@ -37,8 +39,7 @@ class IMDBScraper():
 
 def handler(event, args):
     scraper = IMDBScraper()
-    scraper.scrape()
-    data = {'movies': scraper.output}
+    data = {'movies': scraper.scrape()}
     today = datetime.date.today().strftime('%Y-%m-%d')
 
     scraper.upload_to_s3(data, event.get('bucket_name'), key=today)
