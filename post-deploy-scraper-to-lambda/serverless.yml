@@ -1,6 +1,8 @@
 service: imdb-scraper
 custom:
   bucketName: imdb-data
+  serverless-layers:
+    layersDeploymentBucket: ${self:custom.bucketName}
 
 provider:
   name: aws
@@ -23,7 +25,10 @@ provider:
             - 'logs:PutLogEvents'
           Resource: '*'
 
-  functions:
+plugins:
+  - serverless-layers
+
+functions:
   imbd_scraper:
     handler: imbd_scraper.handler
     name: ${sls:stage}-${self:service}-function
